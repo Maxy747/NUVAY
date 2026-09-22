@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { TripPlan } from '@/lib/ai/types';
 import { Bookmark, Share2, Printer, MapPin, Calendar, Users, Sparkles, CheckCircle } from 'lucide-react';
 import { saveTripToLocalStorage } from '@/lib/db/trips';
+import { copyTripLink } from '@/lib/tripLinks';
 
 interface TripHeaderProps {
   plan: TripPlan;
@@ -13,17 +14,24 @@ interface TripHeaderProps {
 export const TripHeader: React.FC<TripHeaderProps> = ({ plan }) => {
   const [isSaved, setIsSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shareStatus, setShareStatus] = useState('');
 
   const handleSave = () => {
     saveTripToLocalStorage(plan);
     setIsSaved(true);
   };
 
-  const handleShare = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
+  const handleShare = async () => {
+    setCopied(false);
+    setShareStatus('');
+    try {
+      if (!navigator.clipboard) throw new Error('Clipboard access is unavailable in this browser.');
+      await copyTripLink(plan.id, window.location.origin, fetch, text => navigator.clipboard.writeText(text));
       setCopied(true);
+      setShareStatus('Link copied. Anyone with it can view this trip. Links are temporary and may expire within 24 hours or when the server restarts.');
       setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      setShareStatus(error instanceof Error ? error.message : 'Could not copy the trip link.');
     }
   };
 
@@ -114,6 +122,7 @@ export const TripHeader: React.FC<TripHeaderProps> = ({ plan }) => {
           </motion.button>
         </div>
       </div>
+      {shareStatus && <p role="status" className="mt-3 text-xs text-slate-300">{shareStatus}</p>}
     </motion.div>
   );
 };

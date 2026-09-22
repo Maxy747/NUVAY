@@ -3,13 +3,14 @@ import { getAIService } from '@/lib/ai';
 import { TripRequest } from '@/lib/ai/types';
 import { saveTripToMemory } from '@/lib/db/trips';
 import { validateTripPlan, enforcePlanConstraints } from '@/lib/ai/validator';
+import { isValidTripRequest } from '@/lib/ai/requestValidation';
+import { randomUUID } from 'node:crypto';
 
 export async function POST(req: NextRequest) {
   try {
-    const body: TripRequest = await req.json();
-
-    if (!body.prompt || typeof body.prompt !== 'string') {
-      return NextResponse.json({ error: 'Trip prompt is required' }, { status: 400 });
+    const body: unknown = await req.json().catch(() => null);
+    if (!isValidTripRequest(body)) {
+      return NextResponse.json({ error: 'Provide a valid prompt and trip preferences (1–30 days, 1–100 travelers).' }, { status: 400 });
     }
 
     const aiService = getAIService();
@@ -30,6 +31,10 @@ export async function POST(req: NextRequest) {
       accommodationType: body.accommodationType || parsedParams.accommodationType || 'Homestay',
     };
 
+    if (!isValidTripRequest(mergedRequest)) {
+      return NextResponse.json({ error: 'The extracted trip preferences are outside supported limits. Please clarify your request.' }, { status: 400 });
+    }
+
     let tripPlan = await aiService.generateTripPlan(mergedRequest);
 
     // Task 3: Final validation check before sending plan to client
@@ -40,6 +45,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Store in-memory for server-side link sharing support
+    tripPlan = { ...tripPlan, id: randomUUID() };
     saveTripToMemory(tripPlan);
 
     return NextResponse.json({

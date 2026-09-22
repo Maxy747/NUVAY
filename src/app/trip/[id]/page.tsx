@@ -12,6 +12,7 @@ import { StayFoodCard } from '@/components/trip/StayFoodCard';
 import { SafetyPanelCard } from '@/components/trip/SafetyPanelCard';
 import { TripPlan } from '@/lib/ai/types';
 import { getSavedTripsFromLocalStorage } from '@/lib/db/trips';
+import { loadTrip as loadSavedTrip } from '@/lib/tripLinks';
 import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 
 const TripMap = dynamic(() => import('@/components/map/TripMap'), {
@@ -34,49 +35,26 @@ export default function TripDetailPage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setTripPlan(null);
     async function loadTrip() {
       try {
-        // 1. Try server API
-        const res = await fetch(`/api/trips/${id}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.trip) {
-            setTripPlan(data.trip);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // 2. Try localStorage fallback
-        const localTrips = getSavedTripsFromLocalStorage();
-        const found = localTrips.find((t) => t.id === id);
-        if (found) {
-          setTripPlan(found);
-          setLoading(false);
-          return;
-        }
-
-        // 3. Fallback: generate sample trip
-        const fallbackRes = await fetch('/api/plan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: 'I have ₹20,000, 4 days, 3 friends, starting from Mangalore. We want nature, adventure and good food.' }),
-        });
-        if (fallbackRes.ok) {
-          const data = await fallbackRes.json();
-          setTripPlan(data.plan);
-        } else {
-          setError('Trip plan not found.');
-        }
+        const plan = await loadSavedTrip(id, fetch, getSavedTripsFromLocalStorage);
+        if (cancelled) return;
+        setTripPlan(plan);
+        if (!plan) setError('This trip link has expired or the trip is unavailable. Check Saved Trips on the device where you saved it.');
       } catch (err) {
         console.error('Error loading trip:', err);
-        setError('Unable to load trip details.');
+        if (!cancelled) setError('Unable to load trip details.');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadTrip();
+    return () => { cancelled = true; };
   }, [id]);
 
   if (loading) {

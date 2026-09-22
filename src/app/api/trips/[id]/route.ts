@@ -9,8 +9,8 @@ export async function GET(
   const trip = getTripFromMemory(id);
 
   if (!trip) {
-    return NextResponse.json({ error: 'Trip not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Trip not found' }, { status: 404, headers: { 'Cache-Control': 'no-store' } });
   }
 
-  return NextResponse.json({ success: true, trip });
+  return NextResponse.json({ success: true, trip }, { headers: { 'Cache-Control': 'no-store' } });
 }

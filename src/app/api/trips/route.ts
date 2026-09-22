@@ -1,21 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAllSavedTripsFromMemory, getTripFromMemory, saveTripToMemory } from '@/lib/db/trips';
-import { TripPlan } from '@/lib/ai/types';
+import { NextResponse } from 'next/server';
 
-export async function GET() {
-  const trips = getAllSavedTripsFromMemory();
-  return NextResponse.json({ success: true, trips });
+// Until ownership checks exist, trips can only be created through /api/plan
+// and retrieved with their unguessable link. Never expose a trip directory.
+function unavailable() {
+  return NextResponse.json(
+    { error: 'Trip listing and direct writes are not available.' },
+    { status: 405, headers: { 'Cache-Control': 'no-store' } },
+  );
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const plan: TripPlan = await req.json();
-    if (!plan || !plan.id) {
-      return NextResponse.json({ error: 'Invalid trip plan payload' }, { status: 400 });
-    }
-    const saved = saveTripToMemory(plan);
-    return NextResponse.json({ success: true, trip: saved });
-  } catch (err) {
-    return NextResponse.json({ error: 'Failed to save trip' }, { status: 500 });
-  }
-}
+export const GET = unavailable;
+export const POST = unavailable;
