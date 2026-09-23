@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAIService } from '@/lib/ai';
 import { TripRequest } from '@/lib/ai/types';
 import { saveTripToMemory } from '@/lib/db/trips';
-import { validateTripPlan, enforcePlanConstraints } from '@/lib/ai/validator';
+import { AIProviderError } from '@/lib/ai/groqProvider';
 import { isValidTripRequest } from '@/lib/ai/requestValidation';
 import { randomUUID } from 'node:crypto';
 
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       durationDays: body.durationDays || parsedParams.durationDays || 4,
       travelersCount: body.travelersCount || parsedParams.travelersCount || 3,
       travelerType: body.travelerType || parsedParams.travelerType || 'Friends',
-      origin: body.origin || parsedParams.origin || 'Mangalore',
+      origin: body.origin || parsedParams.origin || 'Not specified',
       vibes: body.vibes && body.vibes.length > 0 ? body.vibes : parsedParams.vibes || ['Nature', 'Adventure', 'Good Food'],
       pace: body.pace || parsedParams.pace || 'Balanced',
       accommodationType: body.accommodationType || parsedParams.accommodationType || 'Homestay',
@@ -37,11 +37,8 @@ export async function POST(req: NextRequest) {
 
     let tripPlan = await aiService.generateTripPlan(mergedRequest);
 
-    // Task 3: Final validation check before sending plan to client
-    const validation = validateTripPlan(tripPlan, mergedRequest);
-    if (!validation.valid) {
-      console.warn('[API /api/plan] Validation warnings detected, enforcing constraints:', validation.errors);
-      tripPlan = enforcePlanConstraints(tripPlan, mergedRequest);
+    if (!tripPlan.generation) {
+      tripPlan.generation = { mode: 'demo', provider: aiService.name, notice: 'Sample itinerary for demonstration only. Prices and travel details are not verified.' };
     }
 
     // Store in-memory for server-side link sharing support
@@ -55,7 +52,8 @@ export async function POST(req: NextRequest) {
       extractedRequest: mergedRequest,
     });
   } catch (error) {
-    console.error('[API /api/plan] Error generating trip:', error);
+    if (error instanceof AIProviderError) return NextResponse.json({ error: error.message }, { status: error.status });
+    console.error('[API /api/plan] Unexpected generation failure');
     return NextResponse.json(
       { error: 'Failed to generate trip plan. Please try again.' },
       { status: 500 }

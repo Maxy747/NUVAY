@@ -39,9 +39,6 @@ export const TripHeader: React.FC<TripHeaderProps> = ({ plan }) => {
     window.print();
   };
 
-  const budgetDiff = Math.abs(plan.totalBudgetEstimate - plan.requestedBudget);
-  const matchPct = Math.max(70, Math.min(99, Math.round(100 - (budgetDiff / plan.requestedBudget) * 100)));
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
@@ -56,11 +53,11 @@ export const TripHeader: React.FC<TripHeaderProps> = ({ plan }) => {
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-3 py-1.5 rounded-2xl text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center space-x-1">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>NUVAY AI Personalised Journey</span>
+              <span>{plan.generation?.mode === 'ai' ? 'AI Journey · Groq' : 'Sample Journey'}</span>
             </span>
 
             <span className="px-3 py-1.5 rounded-2xl text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              {matchPct}% Budget Match
+              {plan.totalBudgetEstimate <= plan.requestedBudget ? 'Within estimated budget' : 'Over estimated budget'}
             </span>
           </div>
 
@@ -122,6 +119,7 @@ export const TripHeader: React.FC<TripHeaderProps> = ({ plan }) => {
           </motion.button>
         </div>
       </div>
+      {plan.generation && <p className="mt-3 text-xs text-slate-300">{plan.generation.notice}</p>}
       {shareStatus && <p role="status" className="mt-3 text-xs text-slate-300">{shareStatus}</p>}
     </motion.div>
   );

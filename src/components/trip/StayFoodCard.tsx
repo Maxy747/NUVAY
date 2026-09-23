@@ -18,6 +18,7 @@ export const StayFoodCard: React.FC<StayFoodCardProps> = ({
   activities,
   currency,
 }) => {
+  if (!accommodations.length && !food.length && !activities.length) return null;
   return (
     <div className="space-y-8">
       {/* Accommodation Suggestions */}
