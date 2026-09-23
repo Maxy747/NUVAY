@@ -65,7 +65,7 @@ export const Navbar: React.FC = () => {
           {/* Subtle Low-Contrast Glass Status Pill */}
           <div className="flex items-center space-x-2 text-xs font-mono text-slate-400 bg-white/[0.04] backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/[0.06]">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>AI Engine Active</span>
+            <span>Journey Planner</span>
           </div>
         </nav>
 

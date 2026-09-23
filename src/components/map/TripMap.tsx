@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { MapMarker } from '@/lib/ai/types';
 import { MapBottomSheet } from './MapBottomSheet';
 import 'leaflet/dist/leaflet.css';
+import { createMarkerPopup, markerDay } from '@/lib/map/popup';
 
 interface TripMapProps {
   center: [number, number];
@@ -21,8 +22,10 @@ export const TripMap: React.FC<TripMapProps> = ({ center, zoom, markers }) => {
     const container = mapContainerRef.current;
     if (!container) return;
 
+    let cancelled = false;
     // Dynamically load leaflet
     import('leaflet').then((L) => {
+      if (cancelled) return;
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
@@ -70,7 +73,7 @@ export const TripMap: React.FC<TripMapProps> = ({ center, zoom, markers }) => {
               box-shadow: 0 0 15px rgba(245, 158, 11, 0.8);
               cursor: pointer;
             ">
-              ${day ? `D${day}` : '★'}
+              ${markerDay(day) ? `D${markerDay(day)}` : '★'}
             </div>
           `,
           iconSize: [30, 30],
@@ -81,7 +84,7 @@ export const TripMap: React.FC<TripMapProps> = ({ center, zoom, markers }) => {
       const polylineCoords: [number, number][] = [];
 
       markers.forEach((m) => {
-        if (m.lat && m.lng) {
+        if (Number.isFinite(m.lat) && Number.isFinite(m.lng) && Math.abs(m.lat) <= 90 && Math.abs(m.lng) <= 180) {
           polylineCoords.push([m.lat, m.lng]);
 
           const marker = L.marker([m.lat, m.lng], {
@@ -92,19 +95,7 @@ export const TripMap: React.FC<TripMapProps> = ({ center, zoom, markers }) => {
             setSelectedMarker(m);
           });
 
-          const popupContent = `
-            <div style="font-family: inherit; padding: 4px;">
-              <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #F59E0B; margin-bottom: 2px;">
-                ${m.type} ${m.day ? `• Day ${m.day}` : ''}
-              </div>
-              <div style="font-weight: 700; font-size: 14px; color: #F8FAFC; margin-bottom: 4px;">
-                ${m.title}
-              </div>
-              <div style="font-size: 12px; color: #94A3B8; line-height: 1.3;">
-                ${m.description}
-              </div>
-            </div>
-          `;
+          const popupContent = createMarkerPopup(document, m);
           marker.bindPopup(popupContent);
         }
       });
@@ -122,6 +113,7 @@ export const TripMap: React.FC<TripMapProps> = ({ center, zoom, markers }) => {
     });
 
     return () => {
+      cancelled = true;
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;

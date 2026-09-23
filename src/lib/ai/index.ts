@@ -1,13 +1,10 @@
 import { AIService } from './provider';
-import { GeminiAIService } from './geminiProvider';
+import { GroqAIService } from './groqProvider';
 import { MockAIService } from './mockProvider';
 
 export function getAIService(): AIService {
-  const hasKey = !!(process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY);
-  if (hasKey) {
-    return new GeminiAIService();
-  }
-  return new MockAIService();
+  if (process.env.AI_PROVIDER === 'demo') return new MockAIService();
+  return new GroqAIService();
 }
 
 export * from './types';

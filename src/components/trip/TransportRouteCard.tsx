@@ -10,6 +10,13 @@ interface TransportRouteCardProps {
 }
 
 export const TransportRouteCard: React.FC<TransportRouteCardProps> = ({ route }) => {
+  if (route.distanceKm <= 0) return (
+    <div className="bg-slate-900/80 rounded-3xl border border-amber-500/20 p-6 space-y-3">
+      <h3 className="text-lg font-bold text-slate-100">Transportation & Route Guide</h3>
+      <p className="text-sm text-slate-300">{route.origin} → {route.destination}</p>
+      <p className="text-sm text-slate-400">Road distance and travel times have not been verified. Check your route in a maps app before departure.</p>
+    </div>
+  );
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}

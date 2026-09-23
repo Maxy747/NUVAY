@@ -25,7 +25,7 @@ export const SafetyPanelCard: React.FC<SafetyPanelCardProps> = ({ safety }) => {
 
         <div className="flex items-center space-x-2 bg-emerald-500/10 px-3 py-1 rounded-2xl border border-emerald-500/20">
           <span className="text-xs font-mono font-bold text-emerald-400">
-            Safety Score: {safety.overallSafetyIndex}/100
+            {safety.overallSafetyIndex === null ? 'Not independently verified' : `Sample score: ${safety.overallSafetyIndex}/100`}
           </span>
         </div>
       </div>
@@ -65,6 +65,7 @@ export const SafetyPanelCard: React.FC<SafetyPanelCardProps> = ({ safety }) => {
               Emergency Contacts & Helplines
             </h4>
             <div className="space-y-2">
+              {safety.emergencyContacts.length === 0 && <p className="text-sm text-slate-300">Check official local emergency contacts before departure.</p>}
               {safety.emergencyContacts.map((contact, idx) => (
                 <div key={idx} className="flex justify-between items-center bg-slate-900 px-3.5 py-2.5 rounded-xl text-sm">
                   <span className="font-semibold text-slate-200">{contact.name}</span>

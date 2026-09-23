@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { TripPlan } from '@/lib/ai/types';
 import { Bookmark, Share2, Printer, MapPin, Calendar, Users, Sparkles, CheckCircle } from 'lucide-react';
 import { saveTripToLocalStorage } from '@/lib/db/trips';
+import { copyTripLink } from '@/lib/tripLinks';
 
 interface TripHeaderProps {
   plan: TripPlan;
@@ -13,26 +14,30 @@ interface TripHeaderProps {
 export const TripHeader: React.FC<TripHeaderProps> = ({ plan }) => {
   const [isSaved, setIsSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [shareStatus, setShareStatus] = useState('');
 
   const handleSave = () => {
     saveTripToLocalStorage(plan);
     setIsSaved(true);
   };
 
-  const handleShare = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
+  const handleShare = async () => {
+    setCopied(false);
+    setShareStatus('');
+    try {
+      if (!navigator.clipboard) throw new Error('Clipboard access is unavailable in this browser.');
+      await copyTripLink(plan.id, window.location.origin, fetch, text => navigator.clipboard.writeText(text));
       setCopied(true);
+      setShareStatus('Link copied. Anyone with it can view this trip. Links are temporary and may expire within 24 hours or when the server restarts.');
       setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      setShareStatus(error instanceof Error ? error.message : 'Could not copy the trip link.');
     }
   };
 
   const handlePrint = () => {
     window.print();
   };
-
-  const budgetDiff = Math.abs(plan.totalBudgetEstimate - plan.requestedBudget);
-  const matchPct = Math.max(70, Math.min(99, Math.round(100 - (budgetDiff / plan.requestedBudget) * 100)));
 
   return (
     <motion.div
@@ -48,11 +53,11 @@ export const TripHeader: React.FC<TripHeaderProps> = ({ plan }) => {
           <div className="flex flex-wrap items-center gap-2">
             <span className="px-3 py-1.5 rounded-2xl text-xs font-bold uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center space-x-1">
               <Sparkles className="w-3.5 h-3.5" />
-              <span>NUVAY AI Personalised Journey</span>
+              <span>{plan.generation?.mode === 'ai' ? 'AI Journey · Groq' : 'Sample Journey'}</span>
             </span>
 
             <span className="px-3 py-1.5 rounded-2xl text-xs font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              {matchPct}% Budget Match
+              {plan.totalBudgetEstimate <= plan.requestedBudget ? 'Within estimated budget' : 'Over estimated budget'}
             </span>
           </div>
 
@@ -114,6 +119,8 @@ export const TripHeader: React.FC<TripHeaderProps> = ({ plan }) => {
           </motion.button>
         </div>
       </div>
+      {plan.generation && <p className="mt-3 text-xs text-slate-300">{plan.generation.notice}</p>}
+      {shareStatus && <p role="status" className="mt-3 text-xs text-slate-300">{shareStatus}</p>}
     </motion.div>
   );
 };

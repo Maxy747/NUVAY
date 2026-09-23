@@ -53,7 +53,7 @@ export interface ActivityHighlight {
 }
 
 export interface SafetyInfo {
-  overallSafetyIndex: number; // e.g. 92 out of 100
+  overallSafetyIndex: number | null;
   emergencyContacts: Array<{ name: string; number: string }>;
   localTips: string[];
   weatherAdvisory: string;
@@ -88,6 +88,7 @@ export interface BudgetBreakdown {
 }
 
 export interface TripPlan {
+  generation?: { mode: 'ai' | 'demo'; provider: string; notice: string };
   id: string;
   title: string;
   tagline: string;

@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Sparkles, MapPin, Compass, ShieldCheck, DollarSign, CheckCircle2, Loader2 } from 'lucide-react';
+import { Sparkles, MapPin, Compass, ShieldCheck, DollarSign, Loader2 } from 'lucide-react';
 
 const GENERATION_STEPS = [
   { id: 1, label: 'Parsing natural prompt & trip intent...', icon: Sparkles },
-  { id: 2, label: 'Evaluating route options & highway nodes...', icon: MapPin },
-  { id: 3, label: 'Optimizing budget allocation across stay, food & activities...', icon: DollarSign },
-  { id: 4, label: 'Verifying local safety advisory & emergency helplines...', icon: ShieldCheck },
-  { id: 5, label: 'Building day-by-day itinerary & interactive map markers...', icon: Compass },
+  { id: 2, label: 'Planning destinations and activities...', icon: MapPin },
+  { id: 3, label: 'Preparing estimated costs...', icon: DollarSign },
+  { id: 4, label: 'Organizing your travel preferences...', icon: ShieldCheck },
+  { id: 5, label: 'Waiting for your complete itinerary...', icon: Compass },
 ];
 
 const QUOTES = [
@@ -53,7 +53,7 @@ export const TripGeneratorState: React.FC = () => {
           Crafting Your NUVAY Journey
         </h3>
         <p className="text-sm text-slate-400 font-mono">
-          AI Engine Provider: Google Gemini + Geo Routing Service
+          Generating your plan. This can take up to two minutes.
         </p>
       </div>
 
@@ -62,13 +62,10 @@ export const TripGeneratorState: React.FC = () => {
         {GENERATION_STEPS.map((step) => {
           const isDone = step.id < activeStep;
           const isCurrent = step.id === activeStep;
-          const Icon = step.icon;
 
           return (
             <div key={step.id} className="flex items-center space-x-3 text-sm">
-              {isDone ? (
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-              ) : isCurrent ? (
+              {isCurrent ? (
                 <Loader2 className="w-5 h-5 text-amber-500 animate-spin shrink-0" />
               ) : (
                 <div className="w-5 h-5 rounded-full border-2 border-slate-700 shrink-0"></div>
@@ -76,7 +73,7 @@ export const TripGeneratorState: React.FC = () => {
               <span
                 className={`transition-colors ${
                   isDone
-                    ? 'text-slate-400 line-through text-xs'
+                    ? 'text-slate-400 text-xs'
                     : isCurrent
                     ? 'text-amber-400 font-bold'
                     : 'text-slate-600'

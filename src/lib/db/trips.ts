@@ -1,19 +1,31 @@
 import { TripPlan } from '../ai/types';
 
 // In-memory server store for saved trips (ready for Prisma/PostgreSQL migration)
-let inMemoryTrips: Record<string, TripPlan> = {};
+const inMemoryTrips = new Map<string, { plan: TripPlan; expiresAt: number }>();
+const TRIP_TTL_MS = 24 * 60 * 60 * 1000;
+const MAX_STORED_TRIPS = 500;
+
+function removeExpiredTrips() {
+  const now = Date.now();
+  for (const [id, entry] of inMemoryTrips) {
+    if (entry.expiresAt <= now) inMemoryTrips.delete(id);
+  }
+}
 
 export function saveTripToMemory(plan: TripPlan): TripPlan {
-  inMemoryTrips[plan.id] = plan;
+  removeExpiredTrips();
+  if (inMemoryTrips.has(plan.id)) throw new Error('Trip ID already exists');
+  while (inMemoryTrips.size >= MAX_STORED_TRIPS) {
+    const oldestId = inMemoryTrips.keys().next().value;
+    if (oldestId !== undefined) inMemoryTrips.delete(oldestId);
+  }
+  inMemoryTrips.set(plan.id, { plan, expiresAt: Date.now() + TRIP_TTL_MS });
   return plan;
 }
 
 export function getTripFromMemory(id: string): TripPlan | null {
-  return inMemoryTrips[id] || null;
-}
-
-export function getAllSavedTripsFromMemory(): TripPlan[] {
-  return Object.values(inMemoryTrips);
+  removeExpiredTrips();
+  return inMemoryTrips.get(id)?.plan ?? null;
 }
 
 // Client-side LocalStorage Sync Helpers
